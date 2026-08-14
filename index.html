@@ -478,6 +478,13 @@
     display:flex; align-items:center; gap:5px;
   }
   .filter-btn:hover{background:#141e29;}
+  .filter-btn.pulse{
+    animation:filterPulse 1.7s ease-in-out infinite;
+  }
+  @keyframes filterPulse{
+    0%,100%{box-shadow:0 0 0 0 rgba(43,168,159,.5);}
+    50%{box-shadow:0 0 0 7px rgba(43,168,159,0);}
+  }
 
   .real-table-wrap{
     overflow-x:auto;
@@ -835,7 +842,7 @@
     <div class="card wide">
       <div class="callout">
         <span class="num">2</span>
-        <span><b>Step 2 — Review the shifts below.</b> Rows shaded pink are still <b>UNCONFIRMED</b>. Scroll right to see every column — Supervisor Check IN/OUT times are editable, so correct them if needed before you approve.</span>
+        <span><b>Step 2 — Load your shifts.</b> Just like the real portal, this screen opens blank. Pick a date range above and click <b>Filter</b> to bring up the shifts for that period. Rows shaded pink are still <b>UNCONFIRMED</b> — scroll right to see every column, and correct the Supervisor Check IN/OUT times if needed before you approve.</span>
       </div>
 
       <div class="toolbar-legend-row">
@@ -849,7 +856,7 @@
         <button class="toolbar-btn" onclick="showToast('Demo only — real exports happen in the live portal')">⬇ Download Roster</button>
       </div>
 
-      <div class="filter-row">
+      <div class="filter-row" id="filterRow">
         <select id="fltStatus" onchange="runFilter()">
           <option>UNCONFIRMED</option>
           <option>CONFIRMED</option>
@@ -877,7 +884,7 @@
           <option value="Amelia Chen">
           <option value="Jordan Blake">
         </datalist>
-        <button class="filter-btn" onclick="runFilter()">⏷ Filter</button>
+        <button class="filter-btn pulse" id="filterBtn" onclick="runFilter()">⏷ Filter</button>
       </div>
 
       <p class="screen-sub" style="margin-bottom:10px;">Edit Supervisor Check IN/OUT times if needed, then tick to approve each shift.</p>
@@ -927,7 +934,14 @@
             </tr>
           </thead>
           <tbody>
-            <tr class="row-unconfirmed" id="row-1">
+            <tr id="emptyRow">
+              <td colspan="18" style="text-align:center; padding:48px 20px; color:var(--ink-soft);">
+                <div style="font-size:26px; margin-bottom:8px;">📋</div>
+                <div style="font-weight:700; color:var(--navy); font-size:14px; margin-bottom:4px;">No shifts loaded yet</div>
+                <div style="font-size:13px;">Pick a date range above, then click <b>Filter</b> to bring up shifts for that period.</div>
+              </td>
+            </tr>
+            <tr class="row-unconfirmed data-row" id="row-1" style="display:none;">
               <td>CHAN0000010001</td>
               <td>Demo Staffing Client Pty Ltd</td>
               <td>Amelia Chen</td>
@@ -951,7 +965,7 @@
               <td><span class="cell-location">CheckOut Location</span></td>
               <td><input type="checkbox" id="tick-1" onchange="checkReady()"></td>
             </tr>
-            <tr class="row-unconfirmed" id="row-2">
+            <tr class="row-unconfirmed data-row" id="row-2" style="display:none;">
               <td>CHAN0000010002</td>
               <td>Demo Staffing Client Pty Ltd</td>
               <td>Jordan Blake</td>
@@ -1232,10 +1246,17 @@
     document.getElementById('continueBtn').style.display = 'none';
     document.getElementById('submitHint').textContent = '';
 
-    // filters
+    // filters — back to the portal's default blank state
     document.getElementById('fltStatus').value = 'UNCONFIRMED';
+    document.getElementById('fltRange').selectedIndex = 0;
+    document.getElementById('fltDates').selectedIndex = 0;
+    document.getElementById('fltDept').selectedIndex = 0;
+    document.getElementById('fltPosition').selectedIndex = 0;
     document.getElementById('fltName').value = '';
-    document.querySelectorAll('#screen-2 tbody tr').forEach(r=> r.style.display = '');
+    document.querySelectorAll('#screen-2 tbody tr.data-row').forEach(r=>{ r.style.display = 'none'; });
+    document.getElementById('emptyRow').style.display = '';
+    document.getElementById('filterBtn').classList.add('pulse');
+    loaded = false;
 
     // demo/global state
     submitted = false;
@@ -1245,10 +1266,16 @@
   }
 
   // ---- dummy filter, wired to the real controls so they behave like the real page ----
+  let loaded = false;
   function runFilter(){
+    const wasLoaded = loaded;
+    loaded = true;
+    document.getElementById('emptyRow').style.display = 'none';
+    document.getElementById('filterBtn').classList.remove('pulse');
+
     const status = document.getElementById('fltStatus').value;
     const name = document.getElementById('fltName').value.trim().toLowerCase();
-    const rows = document.querySelectorAll('#screen-2 tbody tr');
+    const rows = document.querySelectorAll('#screen-2 tbody tr.data-row');
     let shown = 0;
     rows.forEach(r=>{
       const rowName = r.querySelector('td:nth-child(3)').textContent.trim().toLowerCase();
@@ -1261,6 +1288,8 @@
     });
     if(status === 'CONFIRMED' && !submitted){
       showToast('No confirmed shifts yet — please approve and submit first');
+    } else if(!wasLoaded){
+      showToast(shown ? `Loaded ${shown} shift${shown>1?'s':''} for the selected date range` : 'No shifts found for this date range');
     } else {
       showToast(shown ? `Showing ${shown} shift${shown>1?'s':''} (demo filter)` : 'No shifts match this filter');
     }
