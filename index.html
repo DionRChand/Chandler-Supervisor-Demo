@@ -1028,7 +1028,7 @@
 
       <div class="save-reminder">
         <span>🔐</span>
-        <span><b>Before you go:</b> the first time you log in to the real portal, save your username and password somewhere safe (e.g. your phone's password manager or a secure note) — Chandler won't resend them, and you'll need them every time you sign in.</span>
+        <span><b>Before you go:</b> when you first log in to the real portal, please save your username and password somewhere safe — your phone's password manager or a secure note works well. We're not able to resend these details, so keeping a copy handy will make signing in each time much easier for you.</span>
       </div>
 
       <div class="bookmark-row">
@@ -1037,12 +1037,12 @@
       </div>
 
       <div class="contact-block">
-        <b>Please note:</b> Once shifts have been confirmed online, they cannot be edited. To help ensure all times are recorded accurately, we recommend reviewing clock-ins and clock-outs regularly rather than waiting until Monday to review them in bulk.<br><br>
-        If a change is required after a shift has been submitted, please email <b>chandleraccounts@chandlerservices.com.au</b> or contact us on <b>03 9656 9777</b>. We will be happy to assist and, where required, seek confirmation or approval by email.
+        <b>Please note:</b> once shifts have been confirmed online, they can no longer be edited. To help keep everything accurate, we'd recommend reviewing clock-ins and clock-outs regularly, rather than leaving them all until Monday.<br><br>
+        If you do need a change made after a shift has been submitted, please don't hesitate to email us at <b>chandleraccounts@chandlerservices.com.au</b> or call us on <b>03 9656 9777</b> — we're always happy to help, and will confirm any approvals by email where needed.
       </div>
 
       <div class="btn-row">
-        <button class="btn btn-ghost" onclick="goTo(0)">↺ Restart demo</button>
+        <button class="btn btn-ghost" onclick="resetDemo()">↺ Restart demo</button>
       </div>
     </div>
   </section>
@@ -1058,7 +1058,7 @@
   <div class="modal">
     <div class="icon">!</div>
     <h3>Submit these shifts?</h3>
-    <p>Once confirmed, these shifts lock and can't be edited in the portal. If you need a change afterwards, you'll need to email or call Chandler Accounts.</p>
+    <p>Once confirmed, these shifts will be locked and can no longer be edited in the portal. If you need a change afterwards, please just email or call Chandler Accounts — we're happy to help.</p>
     <div class="btn-row" style="margin-top:0;">
       <button class="btn btn-ghost" onclick="closeModal()">Go back</button>
       <button class="btn btn-primary" onclick="confirmSubmit()">Yes, submit</button>
@@ -1150,9 +1150,9 @@
       hint.style.color = 'var(--green)';
     } else {
       const missing = [];
-      if(!t1) missing.push('tick Amelia Chen\'s row');
-      if(!t2) missing.push('tick Jordan Blake\'s row');
-      hint.textContent = 'To submit: ' + missing.join(', ') + '.';
+      if(!t1) missing.push('Amelia Chen\'s row');
+      if(!t2) missing.push('Jordan Blake\'s row');
+      hint.textContent = 'Please tick ' + missing.join(' and ') + ' to submit.';
       hint.style.color = 'var(--ink-soft)';
     }
   }
@@ -1193,6 +1193,57 @@
     setTimeout(()=>{ goTo(4); }, 900);
   }
 
+  // ---- restart demo: wipe every bit of state the walkthrough recorded ----
+  function resetDemo(){
+    // sign-in fields
+    document.getElementById('uname').value = '';
+    document.getElementById('pword').value = '';
+    const signBtn = document.getElementById('signInBtn');
+    signBtn.disabled = false;
+    signBtn.classList.remove('btn-loading');
+    signBtn.textContent = 'Sign In';
+
+    // review-shifts table: clear inputs, re-enable anything locked, reset checkboxes
+    ['1','2'].forEach(row=>{
+      document.getElementById('si-'+row).value = '';
+      document.getElementById('so-'+row).value = '';
+      document.getElementById('br-'+row).value = '30';
+      document.getElementById('hrs-'+row).textContent = '—';
+      document.getElementById('tick-'+row).checked = false;
+      const rowEl = document.getElementById('row-'+row);
+      rowEl.classList.remove('row-confirmed');
+      rowEl.classList.add('row-unconfirmed');
+    });
+    document.getElementById('tickAll').checked = false;
+    // only re-enable the fields that submit() locks — text/checkbox inputs and Jordan's
+    // comment box — not the always-static position dropdowns or Amelia's fixed comment box
+    document.querySelectorAll('#screen-2 tbody input, #tickAll').forEach(el=>{
+      el.disabled = false;
+    });
+    const row2Comment = document.getElementById('row-2').querySelector('.cell-comment');
+    row2Comment.disabled = false;
+    row2Comment.value = '';
+
+    // submit button + banners
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submit';
+    document.getElementById('lockedBanner').style.display = 'none';
+    document.getElementById('continueBtn').style.display = 'none';
+    document.getElementById('submitHint').textContent = '';
+
+    // filters
+    document.getElementById('fltStatus').value = 'UNCONFIRMED';
+    document.getElementById('fltName').value = '';
+    document.querySelectorAll('#screen-2 tbody tr').forEach(r=> r.style.display = '');
+
+    // demo/global state
+    submitted = false;
+    closeModal();
+    setStepper(-1);
+    goTo(0);
+  }
+
   // ---- dummy filter, wired to the real controls so they behave like the real page ----
   function runFilter(){
     const status = document.getElementById('fltStatus').value;
@@ -1209,7 +1260,7 @@
       if(visible) shown++;
     });
     if(status === 'CONFIRMED' && !submitted){
-      showToast('No confirmed shifts yet — approve and submit first');
+      showToast('No confirmed shifts yet — please approve and submit first');
     } else {
       showToast(shown ? `Showing ${shown} shift${shown>1?'s':''} (demo filter)` : 'No shifts match this filter');
     }
