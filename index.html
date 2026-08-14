@@ -107,37 +107,71 @@
     white-space:nowrap;
   }
 
-  /* ---------- stepper ---------- */
+  /* ---------- stepper (compact dot style) ---------- */
   .stepper{
     display:flex;
-    gap:6px;
-    margin:6px 0 26px;
+    align-items:flex-start;
+    max-width:420px;
+    margin:6px auto 26px;
   }
   .stepper .seg{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    flex-shrink:0;
+  }
+  .stepper .dot{
+    width:20px;height:20px;
+    border-radius:50%;
+    background:var(--card);
+    border:2px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:800;
+    color:var(--ink-soft);
+    transition:border-color .25s ease, background .25s ease, box-shadow .25s ease, color .25s ease;
+  }
+  .stepper .dot .check{display:none;font-size:11px;}
+  .stepper .seg.done .dot{background:var(--teal); border-color:var(--teal); color:#fff;}
+  .stepper .seg.done .dot .num{display:none;}
+  .stepper .seg.done .dot .check{display:inline; animation:checkPop .3s ease;}
+  @keyframes checkPop{from{transform:scale(0);}to{transform:scale(1);}}
+  .stepper .seg.current .dot{
+    border-color:var(--teal);
+    color:var(--teal);
+    box-shadow:0 0 0 4px var(--teal-light);
+    animation:dotPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes dotPulse{
+    0%,100%{box-shadow:0 0 0 3px var(--teal-light);}
+    50%{box-shadow:0 0 0 6px var(--teal-light);}
+  }
+  .stepper .lbl{
+    font-size:10px;
+    font-weight:700;
+    color:var(--ink-soft);
+    white-space:nowrap;
+    transition:color .25s ease;
+  }
+  .stepper .seg.done .lbl,
+  .stepper .seg.current .lbl{color:var(--navy);}
+  .stepper .connector{
     flex:1;
-    height:5px;
-    border-radius:4px;
+    height:2px;
     background:var(--line);
+    margin:9px 4px 0;
     position:relative;
     overflow:hidden;
   }
-  .stepper .seg.done{background:var(--teal);}
-  .stepper .seg.current::after{
+  .stepper .connector::after{
     content:'';
-    position:absolute;inset:0;
+    position:absolute; inset:0;
     background:var(--teal);
-    animation:fill .5s ease forwards;
+    transform:scaleX(0);
+    transform-origin:left;
+    transition:transform .4s ease;
   }
-  @keyframes fill{from{transform:scaleX(0);}to{transform:scaleX(1);}}
-  .stepper .seg{transform-origin:left;}
-  .step-labels{
-    display:flex;
-    justify-content:space-between;
-    font-size:11px;
-    color:var(--ink-soft);
-    font-weight:600;
-    margin-bottom:6px;
-  }
+  .stepper .connector.done::after{transform:scaleX(1);}
 
   /* ---------- card / screens ---------- */
   .screen{display:none;}
@@ -735,16 +769,13 @@
   </header>
 
   <div class="stepper">
-    <div class="seg" id="seg-0"></div>
-    <div class="seg" id="seg-1"></div>
-    <div class="seg" id="seg-2"></div>
-    <div class="seg" id="seg-3"></div>
-  </div>
-  <div class="step-labels">
-    <span>Sign in</span>
-    <span>Review shifts</span>
-    <span>Submit</span>
-    <span>Done</span>
+    <div class="seg" id="seg-0"><div class="dot"><span class="num">1</span><span class="check">✓</span></div><span class="lbl">Sign in</span></div>
+    <div class="connector" id="conn-0"></div>
+    <div class="seg" id="seg-1"><div class="dot"><span class="num">2</span><span class="check">✓</span></div><span class="lbl">Review shifts</span></div>
+    <div class="connector" id="conn-1"></div>
+    <div class="seg" id="seg-2"><div class="dot"><span class="num">3</span><span class="check">✓</span></div><span class="lbl">Submit</span></div>
+    <div class="connector" id="conn-2"></div>
+    <div class="seg" id="seg-3"><div class="dot"><span class="num">4</span><span class="check">✓</span></div><span class="lbl">Done</span></div>
   </div>
   </div>
 
@@ -1043,6 +1074,10 @@
       seg.classList.remove('done','current');
       if(i<idx) seg.classList.add('done');
       if(i===idx) seg.classList.add('current');
+    }
+    for(let i=0;i<total-1;i++){
+      const conn = document.getElementById('conn-'+i);
+      if(conn) conn.classList.toggle('done', i<idx);
     }
   }
   function signIn(){
